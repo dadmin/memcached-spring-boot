@@ -234,3 +234,5 @@ gradle-app.setting
 # gradle/wrapper/gradle-wrapper.properties
 
 # End of https://www.gitignore.io/api/osx,linux,windows,intellij+iml,eclipse,netbeans,java,gradle
+
+gradle.properties

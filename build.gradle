@@ -1,3 +1,5 @@
+apply from: "https://gradleconfig.devadmin.com/devadmin.deploy.1.gradle"
+
 buildscript {
     ext {
         depedencyManagementVersion = '1.0.6.RELEASE'
@@ -21,19 +23,8 @@ ext.RELEASE_GRADLE = "$rootDir/gradle/release.gradle"
 ext.SONAR_GRADLE = "$rootDir/gradle/sonar.gradle"
 
 allprojects {
-    def gitVersion = { ->
-        def stdout = new ByteArrayOutputStream()
-        exec {
-            ignoreExitValue true
-            commandLine 'git', 'describe', '--tags', '--abbrev=0', '--match', 'v[[:digit:]]*\\.[[:digit:]]*\\.[[:digit:]]*'
-            standardOutput = stdout
-        }
-        def version = stdout.toString().trim()
-        return !version.isEmpty() ? version - 'v' : '1.0.0-SNAPSHOT'
-    }
-
     group = "io.sixhours"
-    version = gitVersion()
+    version = "20190507.2"
 }
 
 subprojects {

@@ -19,13 +19,17 @@ package io.sixhours.memcached.cache;
 import net.spy.memcached.MemcachedClient;
 import org.springframework.cache.support.AbstractValueAdaptingCache;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 /**
  * Cache implementation on top of Memcached.
+ * Added support collections of keys. It always return values that were found
  *
  * @author Igor Bolic
  */
@@ -58,6 +62,17 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
 
     @Override
     protected Object lookup(Object key) {
+        if(key instanceof Collection){
+            Map<String, String> keyToMemcachedKey = (Map<String, String>) ((Collection) key).stream().collect(Collectors.toMap(k -> k, this::memcachedKey));
+            Map<String, Object> values = memcachedClient.getBulk(keyToMemcachedKey.values());
+            trackCollectionHitsMisses(values.size(), ((Collection) key).size() - values.size());
+            //replace memcached keys with origin keys in result
+            keyToMemcachedKey.entrySet().forEach(entry -> {
+                Object value = values.remove(entry.getValue());
+                values.put(entry.getKey(), value);
+            });
+            return values;
+        }
         return trackHitsMisses(memcachedClient.get(memcachedKey(key)));
     }
 
@@ -154,6 +169,17 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
     }
 
     /**
+     * Tracks number of hits and misses per {@code MemcachedCache} instance for collection key.
+     *
+     * @param hitsCount how much keys were presented in cache
+     * @param missesCount how much keys weren't presented in cache
+     */
+    private void trackCollectionHitsMisses(int hitsCount, int missesCount) {
+        hits.addAndGet(hitsCount);
+        misses.addAndGet(missesCount);
+    }
+
+    /**
      * Gets Memcached key value.
      * <p>
      * Prepends cache prefix and namespace value to the given {@code key}. All whitespace characters will be stripped from
@@ -166,6 +192,7 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
         return memcacheCacheMetadata.keyPrefix() +
                 namespaceValue() +
                 KEY_DELIMITER +
+                memcacheCacheMetadata.name() +
                 String.valueOf(key).replaceAll("\\s", "");
     }
 
