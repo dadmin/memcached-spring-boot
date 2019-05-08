@@ -192,7 +192,6 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
         return memcacheCacheMetadata.keyPrefix() +
                 namespaceValue() +
                 KEY_DELIMITER +
-                memcacheCacheMetadata.name() +
                 String.valueOf(key).replaceAll("\\s", "");
     }
 
