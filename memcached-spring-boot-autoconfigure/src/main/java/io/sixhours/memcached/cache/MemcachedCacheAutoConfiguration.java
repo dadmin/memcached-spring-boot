@@ -46,7 +46,7 @@ import java.io.IOException;
 @ConditionalOnMissingSpringCacheType
 @ConditionalOnClass({MemcachedClient.class, CacheManager.class})
 @ConditionalOnBean(CacheAspectSupport.class)
-@ConditionalOnMissingBean({CacheManager.class, CacheResolver.class})
+@ConditionalOnMissingBean(CacheManager.class)
 @EnableConfigurationProperties(MemcachedCacheProperties.class)
 @AutoConfigureBefore(CacheAutoConfiguration.class)
 @AutoConfigureAfter(name = "org.springframework.cloud.autoconfigure.RefreshAutoConfiguration")
