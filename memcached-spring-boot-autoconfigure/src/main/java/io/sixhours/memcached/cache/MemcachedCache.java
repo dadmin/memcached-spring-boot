@@ -142,7 +142,7 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
 
     @Override
     public void clear() {
-        this.memcachedClient.incr(this.memcacheCacheMetadata.namespaceKey(), 1);
+        this.memcacheCacheMetadata.incrNamespaceValue();
     }
 
     public long hits() {
@@ -190,7 +190,7 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
      */
     private String memcachedKey(Object key) {
         return memcacheCacheMetadata.keyPrefix() +
-                namespaceValue() +
+                memcacheCacheMetadata.namespaceValue() +
                 KEY_DELIMITER +
                 String.valueOf(key).replaceAll("\\s", "");
     }
@@ -199,14 +199,15 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
      * Gets namespace value from the cache. The value is used for invalidation of the cache data
      * by incrementing current namespace value by 1.
      *
+     * @param namespaceKey namespace key
+     * @param expiration cache ttl
      * @return Namespace integer value returned as {@code String}
      */
-    private String namespaceValue() {
-        String value = (String) this.memcachedClient.get(this.memcacheCacheMetadata.namespaceKey());
+    private String namespaceValue(String namespaceKey, int expiration) {
+        String value = (String) this.memcachedClient.get(namespaceKey);
         if (value == null) {
             value = String.valueOf(System.currentTimeMillis());
-            this.memcachedClient.set(this.memcacheCacheMetadata.namespaceKey(),
-                    this.memcacheCacheMetadata.expiration(), value);
+            this.memcachedClient.set(namespaceKey, expiration, value);
         }
 
         return value;
@@ -217,6 +218,7 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
         private final int expiration;
         private final String keyPrefix;
         private final String namespaceKey;
+        private String namespaceValue;
 
         public MemcacheCacheMetadata(String name, int expiration, String cachePrefix, String namespace) {
             this.name = name;
@@ -229,6 +231,7 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
 
             this.keyPrefix = sb.toString();
             this.namespaceKey = sb.append(namespace).toString();
+            this.namespaceValue = MemcachedCache.this.namespaceValue(namespaceKey, expiration);
         }
 
         public String name() {
@@ -245,6 +248,14 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
 
         public String namespaceKey() {
             return namespaceKey;
+        }
+
+        public String namespaceValue() {
+            return namespaceValue;
+        }
+
+        public void incrNamespaceValue(){
+            namespaceValue = String.valueOf(Integer.valueOf(namespaceKey) + 1);
         }
     }
 }
