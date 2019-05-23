@@ -142,7 +142,8 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
 
     @Override
     public void clear() {
-        this.memcacheCacheMetadata.incrNamespaceValue();
+        memcacheCacheMetadata.incrNamespaceValue();
+        memcachedClient.set(memcacheCacheMetadata.namespaceKey(), memcacheCacheMetadata.expiration(), memcacheCacheMetadata.namespaceValue());
     }
 
     public long hits() {
@@ -255,7 +256,7 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
         }
 
         public void incrNamespaceValue(){
-            namespaceValue = String.valueOf(Integer.valueOf(namespaceKey) + 1);
+            namespaceValue = String.valueOf(Long.valueOf(namespaceValue) + 1);
         }
     }
 }
