@@ -121,7 +121,6 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
     @Override
     public void put(Object key, Object value) {
         this.memcachedClient.set(memcachedKey(key), this.memcacheCacheMetadata.expiration(), toStoreValue(value));
-        this.memcachedClient.touch(this.memcacheCacheMetadata.namespaceKey(), this.memcacheCacheMetadata.expiration());
     }
 
     @Override
