@@ -43,7 +43,6 @@ public class MemcachedCacheManagerFactory {
         cacheManager.setExpiration(properties.getExpiration());
         cacheManager.setExpirations(properties.getExpirations());
         cacheManager.setPrefix(properties.getPrefix());
-        cacheManager.setNamespace(properties.getNamespace());
 
         return cacheManager;
     }

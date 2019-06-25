@@ -62,14 +62,6 @@ public class MemcachedCacheProperties {
     private String prefix = Default.PREFIX;
 
     /**
-     * Namespace key value used for invalidation of cached values. The default value is 'namespace'.
-     *
-     * @deprecated As of release {@code 1.1.0}. To be removed in next major release.
-     */
-    @Deprecated
-    private String namespace = Default.NAMESPACE;
-
-    /**
      * Memcached client protocol. Supports two main protocols: the classic text (ascii), and the newer binary protocol.
      * The default is 'text' protocol.
      */
@@ -149,15 +141,6 @@ public class MemcachedCacheProperties {
 
     public void setPrefix(String prefix) {
         this.prefix = prefix;
-    }
-
-    @DeprecatedConfigurationProperty(reason = "As of release {@code 1.1.0}. To be removed in next major release. This " +
-            "value is expected to be retained only as a private value for the cache namespace. The namespace value used is 'namespace'")
-    public String getNamespace() {
-        if (namespace != null) {
-            namespace = Default.NAMESPACE;
-        }
-        return namespace;
     }
 
     public Protocol getProtocol() {

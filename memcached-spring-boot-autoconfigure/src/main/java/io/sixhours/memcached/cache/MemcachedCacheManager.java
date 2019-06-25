@@ -49,7 +49,6 @@ public class MemcachedCacheManager implements CacheManager {
 
     private int expiration = Default.EXPIRATION;
     private String prefix = Default.PREFIX;
-    private String namespace = Default.NAMESPACE;
     private Map<String, Integer> expirations;
 
     /**
@@ -83,7 +82,7 @@ public class MemcachedCacheManager implements CacheManager {
 
     private MemcachedCache createCache(String name) {
         int expiration = determineExpiration(name);
-        return new MemcachedCache(name, memcachedClient, expiration, prefix, namespace);
+        return new MemcachedCache(name, memcachedClient, expiration, prefix);
     }
 
     private int determineExpiration(String name) {
@@ -108,10 +107,6 @@ public class MemcachedCacheManager implements CacheManager {
 
     public void setPrefix(String prefix) {
         this.prefix = prefix;
-    }
-
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
     }
 
     /**
