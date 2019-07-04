@@ -24,7 +24,7 @@ ext.SONAR_GRADLE = "$rootDir/gradle/sonar.gradle"
 
 allprojects {
     group = "io.sixhours"
-    version = "20190625.1"
+    version = "20190704.1"
 }
 
 subprojects {

@@ -68,7 +68,7 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
             //replace memcached keys with origin keys in result
             keyToMemcachedKey.entrySet().forEach(entry -> {
                 Object value = values.remove(entry.getValue());
-                values.put(entry.getKey(), value);
+                if(value != null) values.put(entry.getKey(), value);
             });
             return values;
         }
