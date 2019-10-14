@@ -35,10 +35,9 @@ import java.util.stream.Collectors;
  */
 public class MemcachedCache extends AbstractValueAdaptingCache {
 
-    private static final String KEY_DELIMITER = ":";
-
     private final MemcachedClient memcachedClient;
-    private final MemcacheCacheMetadata memcacheCacheMetadata;
+    private final MemcachedKeyGenerator memcachedKeyGenerator;
+    private final int expiration;
 
     private final Lock lock = new ReentrantLock();
 
@@ -56,28 +55,29 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
     public MemcachedCache(String name, MemcachedClient memcachedClient, int expiration, String prefix) {
         super(true);
         this.memcachedClient = memcachedClient;
-        this.memcacheCacheMetadata = new MemcacheCacheMetadata(name, expiration, prefix);
+        this.memcachedKeyGenerator = new MemcachedKeyGenerator(prefix, name, Default.KEY_DELIMITER);
+        this.expiration = expiration;
     }
 
     @Override
     protected Object lookup(Object key) {
-        if(key instanceof Collection){
-            Map<String, String> keyToMemcachedKey = (Map<String, String>) ((Collection) key).stream().collect(Collectors.toMap(k -> k, this::memcachedKey));
+        if (key instanceof Collection) {
+            Map<String, String> keyToMemcachedKey = (Map<String, String>) ((Collection) key).stream().collect(Collectors.toMap(k -> k, memcachedKeyGenerator::memcachedKey));
             Map<String, Object> values = memcachedClient.getBulk(keyToMemcachedKey.values());
             trackCollectionHitsMisses(values.size(), ((Collection) key).size() - values.size());
             //replace memcached keys with origin keys in result
             keyToMemcachedKey.entrySet().forEach(entry -> {
                 Object value = values.remove(entry.getValue());
-                if(value != null) values.put(entry.getKey(), value);
+                if (value != null) values.put(entry.getKey(), value);
             });
             return values;
         }
-        return trackHitsMisses(memcachedClient.get(memcachedKey(key)));
+        return trackHitsMisses(memcachedClient.get(memcachedKeyGenerator.memcachedKey(key)));
     }
 
     @Override
     public String getName() {
-        return this.memcacheCacheMetadata.name();
+        return this.memcachedKeyGenerator.getCacheName();
     }
 
     @Override
@@ -119,7 +119,7 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
 
     @Override
     public void put(Object key, Object value) {
-        this.memcachedClient.set(memcachedKey(key), this.memcacheCacheMetadata.expiration(), toStoreValue(value));
+        this.memcachedClient.set(memcachedKeyGenerator.memcachedKey(key), expiration, toStoreValue(value));
     }
 
     @Override
@@ -135,7 +135,7 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
 
     @Override
     public void evict(Object key) {
-        this.memcachedClient.delete(memcachedKey(key));
+        this.memcachedClient.delete(memcachedKeyGenerator.memcachedKey(key));
     }
 
     @Override
@@ -169,7 +169,7 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
     /**
      * Tracks number of hits and misses per {@code MemcachedCache} instance for collection key.
      *
-     * @param hitsCount how much keys were presented in cache
+     * @param hitsCount   how much keys were presented in cache
      * @param missesCount how much keys weren't presented in cache
      */
     private void trackCollectionHitsMisses(int hitsCount, int missesCount) {
@@ -178,41 +178,38 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
     }
 
     /**
-     * Gets Memcached key value.
-     * <p>
-     * Prepends cache prefix and namespace value to the given {@code key}. All whitespace characters will be stripped from
-     * the {@code key} value, for Memcached key to be valid.
-     *
-     * @param key The key
-     * @return Memcached key
+     * Class for generating key fro memcached
      */
-    private String memcachedKey(Object key) {
-        return memcacheCacheMetadata.keyPrefix() +
-                KEY_DELIMITER +
-                String.valueOf(key).replaceAll("\\s", "");
-    }
+    public class MemcachedKeyGenerator {
 
-    class MemcacheCacheMetadata {
-        private final String name;
-        private final int expiration;
-        private final String keyPrefix;
+        private String cachePrefix;
+        private String cacheName;
+        private String delimiter;
 
-        public MemcacheCacheMetadata(String name, int expiration, String cachePrefix) {
-            this.name = name;
-            this.expiration = expiration;
-            this.keyPrefix = cachePrefix + KEY_DELIMITER + name + KEY_DELIMITER;
+        public MemcachedKeyGenerator(String cachePrefix, String cacheName, String delimiter) {
+            this.cachePrefix = cachePrefix;
+            this.cacheName = cacheName;
+            this.delimiter = delimiter;
         }
 
-        public String name() {
-            return name;
+        public MemcachedKeyGenerator(String cacheName) {
+            this.cacheName = cacheName;
+            this.cachePrefix = Default.PREFIX;
+            this.delimiter = Default.KEY_DELIMITER;
         }
 
-        public int expiration() {
-            return expiration;
+        /**
+         * Generate key for memcached as a string
+         * @param key generic spring cache abstraction key. It cannot be used for memcache raw because for memcache
+         *            string keys are required
+         * @return string representation of the key
+         */
+        public String memcachedKey(Object key) {
+            return cachePrefix + delimiter + cacheName + delimiter + delimiter + String.valueOf(key).replaceAll("\\s", "");
         }
 
-        public String keyPrefix() {
-            return keyPrefix;
+        public String getCacheName() {
+            return cacheName;
         }
     }
 }
