@@ -180,7 +180,7 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
     /**
      * Class for generating key fro memcached
      */
-    public class MemcachedKeyGenerator {
+    public static class MemcachedKeyGenerator {
 
         private String cachePrefix;
         private String cacheName;
