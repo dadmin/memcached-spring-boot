@@ -62,7 +62,8 @@ public class MemcachedCache extends AbstractValueAdaptingCache {
     @Override
     protected Object lookup(Object key) {
         if (key instanceof Collection) {
-            Map<String, String> keyToMemcachedKey = (Map<String, String>) ((Collection) key).stream().collect(Collectors.toMap(k -> k, memcachedKeyGenerator::memcachedKey));
+            Map<String, String> keyToMemcachedKey
+                    = (Map<String, String>) ((Collection) key).stream().distinct().collect(Collectors.toMap(k -> k, memcachedKeyGenerator::memcachedKey));
             Map<String, Object> values = memcachedClient.getBulk(keyToMemcachedKey.values());
             trackCollectionHitsMisses(values.size(), ((Collection) key).size() - values.size());
             //replace memcached keys with origin keys in result
